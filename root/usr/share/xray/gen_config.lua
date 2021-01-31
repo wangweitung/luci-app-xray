@@ -79,14 +79,14 @@ local function stream_tcp(server)
 end
 
 local function stream_h2(server)
-    if (server.transport == "h2") then 
+    if (server.transport == "h2") then
         return {
             path = server.h2_path,
             host = server.h2_host
-        } 
-    else 
+        }
+    else
         return nil
-    end  
+    end
 end
 
 local function stream_ws(server)
@@ -95,7 +95,7 @@ local function stream_ws(server)
         if (server.ws_host ~= nil) then
             headers = {
                 Host = server.ws_host
-            } 
+            }
         end
         return {
             path = server.ws_path,
@@ -302,11 +302,11 @@ local function trojan_outbound(server, tag)
     }
 end
 
-local function server_outbound(server, tag) 
+local function server_outbound(server, tag)
     if server.protocol == "vmess" then
         return vmess_outbound(server, tag)
     end
-    if server.protocol == "vless" then 
+    if server.protocol == "vless" then
         return vless_outbound(server, tag)
     end
     if server.protocol == "shadowsocks" then
@@ -470,7 +470,7 @@ local function https_vless_inbound()
 end
 
 local function https_inbound()
-    if proxy.web_server_protocol == "vless" then 
+    if proxy.web_server_protocol == "vless" then
         return https_vless_inbound()
     end
     if proxy.web_server_protocol == "trojan" then
@@ -539,7 +539,16 @@ local function inbounds()
         tproxy_tcp_inbound(),
         tproxy_udp_inbound(),
         socks_inbound(),
-        dns_server_inbound()
+        dns_server_inbound(),
+        {
+            listen = "0.0.0.0",
+            port = 18888,
+            protocol = "dokodemo-door",
+            settings = {
+                address = "127.0.0.1"
+            },
+            tag = "pprof"
+        }
     }
     if proxy.web_server_enable == "1" then
         table.insert(i, https_inbound())
@@ -585,6 +594,11 @@ local function rules()
             type = "field",
             inboundTag = {"api"},
             outboundTag = "api"
+        },
+        {
+            type = "field",
+            inboundTag = {"pprof"},
+            outboundTag = "pprof"
         }
     }
     if proxy.geoip_direct_code ~= nil then
@@ -608,6 +622,9 @@ local xray = {
     },
     dns = dns_conf(),
     api = api_conf(),
+    pprof = {
+        tag = "pprof"
+    },
     routing = {
         domainStrategy = "AsIs",
         rules = rules()
@@ -615,3 +632,4 @@ local xray = {
 }
 
 print(json.stringify(xray, true))
+
